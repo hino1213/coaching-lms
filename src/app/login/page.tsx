@@ -23,12 +23,12 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setError('メールアドレスまたはパスワードが正しくありません');
+      setError('ã¡ã¼ã«ã¢ãã¬ã¹ã¾ãã¯ãã¹ã¯ã¼ããæ­£ããããã¾ãã');
       setLoading(false);
       return;
     }
 
-    // last_login_at を更新
+    // last_login_at ãæ´æ°
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       await supabase
@@ -44,20 +44,20 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-accent-50 px-4">
       <div className="w-full max-w-md">
-        {/* ロゴ・タイトル */}
+        {/* ã­ã´ã»ã¿ã¤ãã« */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-600 text-white text-2xl font-bold mb-4">
             C
           </div>
           <h1 className="text-2xl font-bold text-gray-900">
-            コーチング学習サイト
+            ã³ã¼ãã³ã°å­¦ç¿ãµã¤ã
           </h1>
           <p className="text-gray-500 mt-2">
-            アカウントにログインして学習を始めましょう
+            ã¢ã«ã¦ã³ãã«ã­ã°ã¤ã³ãã¦å­¦ç¿ãå§ãã¾ããã
           </p>
         </div>
 
-        {/* ログインフォーム */}
+        {/* ã­ã°ã¤ã³ãã©ã¼ã  */}
         <div className="card p-8">
           <form onSubmit={handleLogin} className="space-y-5">
             {error && (
@@ -71,7 +71,7 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                メールアドレス
+                ã¡ã¼ã«ã¢ãã¬ã¹
               </label>
               <input
                 id="email"
@@ -89,7 +89,7 @@ export default function LoginPage() {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                パスワード
+                ãã¹ã¯ã¼ã
               </label>
               <input
                 id="password"
@@ -98,7 +98,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition"
-                placeholder="パスワードを入力"
+                placeholder="ãã¹ã¯ã¼ããå¥å"
               />
             </div>
 
@@ -113,17 +113,22 @@ export default function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  ログイン中...
+                  ã­ã°ã¤ã³ä¸­...
                 </span>
               ) : (
-                'ログイン'
+                'ã­ã°ã¤ã³'
               )}
             </button>
+          <div className="text-center">
+            <a href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+              パスワードをお忘れの方
+            </a>
+          </div>
           </form>
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          アカウントは管理者から発行されます
+          ã¢ã«ã¦ã³ãã¯ç®¡çèããçºè¡ããã¾ã
         </p>
       </div>
     </div>
