@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
   try {
@@ -24,8 +25,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'このメールアドレスは既に登録されています' }, { status: 400 });
     }
 
-    // Create auth user
-    // Note: on_auth_user_created trigger will automatically insert into profiles
+    // Create auth user (on_auth_user_created trigger will insert into profiles automatically)
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
       email, password, email_confirm: true,
       user_metadata: { full_name, email_verified: true }
@@ -46,50 +46,48 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: profileError.message }, { status: 400 });
     }
 
-    // Send welcome email via Resend API
+    // Send welcome email via Gmail SMTP (port 465 SSL)
     try {
-      const resendApiKey = process.env.RESEND_API_KEY;
-      if (resendApiKey) {
-        const siteUrl = 'https://coaching-lms-hazel.vercel.app';
-        const emailRes = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${resendApiKey}`
-          },
-          body: JSON.stringify({
-            from: 'コーチング学習サイト <onboarding@resend.dev>',
-            to: [email],
-            subject: 'コーチング学習サイトへのご登録',
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #333;">コーチング学習サイトへようこそ！</h2>
-                <p>${full_name} 様</p>
-                <p>アカウントが作成されました。以下の情報でログインしてください。</p>
-                <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                  <p><strong>メールアドレス：</strong> ${email}</p>
-                  <p><strong>パスワード：</strong> ${password}</p>
-                </div>
-                <p>
-                  <a href="${siteUrl}/login"
-                     style="background: #4CAF50; color: white; padding: 12px 24px;
-                            text-decoration: none; border-radius: 4px; display: inline-block;">
-                    ログインする
-                  </a>
-                </p>
-                <p style="color: #666; font-size: 12px;">
-                  このメールに心当たりがない場合は無視してください。
-                </p>
-              </div>
-            `
-          })
+      const gmailUser = process.env.GMAIL_USER;
+      const gmailPass = process.env.GMAIL_APP_PASSWORD;
+      if (gmailUser && gmailPass) {
+        const transporter = nodemailer.createTransport({
+          host: 'smtp.gmail.com',
+          port: 465,
+          secure: true,
+          auth: { user: gmailUser, pass: gmailPass }
         });
-        const emailData = await emailRes.json();
-        console.log('Resend response:', JSON.stringify(emailData));
+        const siteUrl = 'https://coaching-lms-hazel.vercel.app';
+        const info = await transporter.sendMail({
+          from: `"コーチング学習サイト" <${gmailUser}>`,
+          to: email,
+          subject: 'コーチング学習サイトへのご登録',
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <h2 style="color: #333;">コーチング学習サイトへようこそ！</h2>
+              <p>${full_name} 様</p>
+              <p>アカウントが作成されました。以下の情報でログインしてください。</p>
+              <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p><strong>メールアドレス：</strong> ${email}</p>
+                <p><strong>パスワード：</strong> ${password}</p>
+              </div>
+              <p>
+                <a href="${siteUrl}/login"
+                   style="background: #4CAF50; color: white; padding: 12px 24px;
+                          text-decoration: none; border-radius: 4px; display: inline-block;">
+                  ログインする
+                </a>
+              </p>
+              <p style="color: #666; font-size: 12px;">
+                このメールに心当たりがない場合は無視してください。
+              </p>
+            </div>
+          `
+        });
+        console.log('Gmail SMTP success:', info.messageId);
       }
-    } catch (emailErr) {
-      console.error('Email send error:', emailErr);
-      // email failure does not fail account creation
+    } catch (emailErr: any) {
+      console.error('Gmail SMTP error:', emailErr?.message || emailErr);
     }
 
     return NextResponse.json({ user });
