@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
   try {
@@ -39,35 +38,17 @@ export async function POST(request: Request) {
         });
         const siteUrl = 'https://coaching-lms-hazel.vercel.app';
         await transporter.sendMail({
-          from: `"コーチング学習サイト" <${gmailUser}>`,
+          from: '"\u30b3\u30fc\u30c1\u30f3\u30b0\u5b66\u7fd2\u30b5\u30a4\u30c8" <' + gmailUser + '>',
           to: email,
-          subject: 'コーチング学習サイトへのご登録',
-          html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
-            <h2 style="color:#4f46e5;">コーチング学習サイトへようこそ！</h2>
-            <p>${full_name} さん、アカウントが登録されました。</p>
-            <table style="border-collapse:collapse;width:100%;margin:16px 0;">
-              <tr style="background:#f3f4f6;">
-                <td style="padding:8px 12px;font-weight:bold;">サイトURL</td>
-                <td style="padding:8px 12px;"><a href="${siteUrl}">${siteUrl}</a></td>
-              </tr>
-              <tr>
-                <td style="padding:8px 12px;font-weight:bold;">メールアドレス</td>
-                <td style="padding:8px 12px;">${email}</td>
-              </tr>
-              <tr style="background:#f3f4f6;">
-                <td style="padding:8px 12px;font-weight:bold;">パスワード</td>
-                <td style="padding:8px 12px;">${password}</td>
-              </tr>
-            </table>
-            <p style="color:#6b7280;font-size:12px;">ログイン後はパスワードの変更をお勧めします。</p>
-          </div>`
+          subject: '\u30b3\u30fc\u30c1\u30f3\u30b0\u5b66\u7fd2\u30b5\u30a4\u30c8\u3078\u306e\u3054\u767b\u9332',
+          html: '<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;"><h2 style="color:#4f46e5;">\u30b3\u30fc\u30c1\u30f3\u30b0\u5b66\u7fd2\u30b5\u30a4\u30c8\u3078\u3088\u3046\u3053\u305d\uff01</h2><p>' + full_name + ' \u3055\u3093\u3001\u30a2\u30ab\u30a6\u30f3\u30c8\u304c\u767b\u9332\u3055\u308c\u307e\u3057\u305f\u3002</p><table style="border-collapse:collapse;width:100%;margin:16px 0;"><tr style="background:#f3f4f6;"><td style="padding:8px 12px;font-weight:bold;">\u30b5\u30a4\u30c8URL</td><td style="padding:8px 12px;"><a href="' + siteUrl + '">' + siteUrl + '</a></td></tr><tr><td style="padding:8px 12px;font-weight:bold;">\u30e1\u30fc\u30eb\u30a2\u30c9\u30ec\u30b9</td><td style="padding:8px 12px;">' + email + '</td></tr><tr style="background:#f3f4f6;"><td style="padding:8px 12px;font-weight:bold;">\u30d1\u30b9\u30ef\u30fc\u30c9</td><td style="padding:8px 12px;">' + password + '</td></tr></table><p style="color:#6b7280;font-size:12px;">\u30ed\u30b0\u30a4\u30f3\u5f8c\u306f\u30d1\u30b9\u30ef\u30fc\u30c9\u306e\u5909\u66f4\u3092\u304a\u52e7\u3081\u3057\u307e\u3059\u3002</p></div>'
         });
       }
     } catch (_) {
-      // メール送信失敗はアカウント作成の失敗とはしない
+      // email failure does not fail account creation
     }
     return NextResponse.json({ user });
   } catch (error) {
-    return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 });
+    return NextResponse.json({ error: '\u30b5\u30fc\u30d0\u30fc\u30a8\u30e9\u30fc\u304c\u767a\u751f\u3057\u307e\u3057\u305f' }, { status: 500 });
   }
 }
