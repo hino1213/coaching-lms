@@ -24,6 +24,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'このメールアドレスは既に登録されています' }, { status: 400 });
     }
 
+    // Create auth user
+    // Note: on_auth_user_created trigger will automatically insert into profiles
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
       email, password, email_confirm: true,
       user_metadata: { full_name, email_verified: true }
@@ -32,9 +34,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: userError.message }, { status: 400 });
     }
     const user = userData.user;
+
+    // Update the profile created by the trigger: set role to 'student'
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({ id: user.id, full_name, email, role: 'student' });
+      .update({ role: 'student', full_name, email })
+      .eq('id', user.id);
+
     if (profileError) {
       await supabaseAdmin.auth.admin.deleteUser(user.id);
       return NextResponse.json({ error: profileError.message }, { status: 400 });
