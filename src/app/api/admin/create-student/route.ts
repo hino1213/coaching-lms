@@ -14,7 +14,6 @@ export async function POST(request: Request) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Check if email already exists in profiles
     const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
       .select('id')
@@ -25,7 +24,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'このメールアドレスは既に登録されています' }, { status: 400 });
     }
 
-    // Create auth user (on_auth_user_created trigger will insert into profiles automatically)
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
       email, password, email_confirm: true,
       user_metadata: { full_name, email_verified: true }
@@ -35,7 +33,6 @@ export async function POST(request: Request) {
     }
     const user = userData.user;
 
-    // Update the profile created by the trigger: set role to 'student'
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({ role: 'student', full_name, email })
@@ -46,7 +43,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: profileError.message }, { status: 400 });
     }
 
-    // Send welcome email via Gmail SMTP (port 465 SSL)
     try {
       const gmailUser = process.env.GMAIL_USER;
       const gmailPass = process.env.GMAIL_APP_PASSWORD;
@@ -78,16 +74,14 @@ export async function POST(request: Request) {
                   ログインする
                 </a>
               </p>
-              <p style="color: #666; font-size: 12px;">
-                このメールに心当たりがない場合は無視してください。
-              </p>
+              <p style="color: #666; font-size: 12px;">このメールに心当たりがない場合は無視してください。</p>
             </div>
           `
         });
         console.log('Gmail SMTP success:', info.messageId);
       }
     } catch (emailErr: any) {
-      console.error('Gmail SMTP error:', emailErr?.message || emailErr);
+      console.error('Gmail SMTP error:', emailErr?.message || String(emailErr));
     }
 
     return NextResponse.json({ user });
