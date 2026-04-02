@@ -7,12 +7,13 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') ?? '/dashboard';
 
   if (code) {
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/login`);
+  // リンクが期限切れまたは無効の場合はリセットページに戻る
+  return NextResponse.redirect(`${origin}/forgot-password?error=expired`);
 }
