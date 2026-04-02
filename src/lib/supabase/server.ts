@@ -17,7 +17,7 @@ export function createServerSupabaseClient() {
               cookieStore.set(name, value, options as Parameters<typeof cookieStore.set>[2])
             );
           } catch {
-            // Server Component では set できない場合がある
+            // Cannot set cookies in Server Components
           }
         },
       },
