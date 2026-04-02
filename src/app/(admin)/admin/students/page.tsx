@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import ProgressBar from '@/components/ProgressBar';
+import AddStudentModal from '@/components/admin/AddStudentModal';
 
 export default async function StudentsPage() {
   const supabase = createServerSupabaseClient();
@@ -111,10 +112,13 @@ export default async function StudentsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">受講生管理</h1>
-        <p className="text-sm text-gray-500">
-          {students?.length || 0}名の受講生
-        </p>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">受講生管理</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {students?.length || 0}名の受講生
+          </p>
+        </div>
+        <AddStudentModal />
       </div>
 
       {/* 受講生テーブル（デスクトップ） */}

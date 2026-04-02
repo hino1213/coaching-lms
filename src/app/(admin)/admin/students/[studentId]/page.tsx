@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import ProgressBar from '@/components/ProgressBar';
 import ContentTypeIcon from '@/components/ContentTypeIcon';
+import EnrollCourseModal from '@/components/admin/EnrollCourseModal';
 
 export default async function StudentDetailPage({
   params,
@@ -88,6 +89,15 @@ export default async function StudentDetailPage({
 
   const validCourses = coursesDetail.filter(Boolean);
 
+  // 全公開講座を取得（EnrollCourseModal用）
+  const { data: allCourses } = await supabase
+    .from('courses')
+    .select('id, title')
+    .eq('is_published', true)
+    .order('sort_order');
+
+  const enrolledCourseIds = (enrollments || []).map((e: any) => e.course_id);
+
   // 最近の学習履歴
   const { data: activityHistory } = await supabase
     .from('lesson_progress')
@@ -126,7 +136,7 @@ export default async function StudentDetailPage({
             {(student.full_name || student.email).charAt(0).toUpperCase()}
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-xl font-bold text-gray-900">
                 {student.full_name || '未設定'}
               </h1>
@@ -152,6 +162,15 @@ export default async function StudentDetailPage({
                   : '未ログイン'}
               </span>
             </div>
+          </div>
+          {/* 講座登録ボタン */}
+          <div className="flex-shrink-0">
+            <EnrollCourseModal
+              studentId={student.id}
+              studentName={student.full_name || student.email}
+              availableCourses={allCourses || []}
+              enrolledCourseIds={enrolledCourseIds}
+            />
           </div>
         </div>
       </div>
