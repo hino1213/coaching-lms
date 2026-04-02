@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   try {
     const { full_name, email, password } = await request.json();
     if (!full_name || !email || !password) {
-      return NextResponse.json({ error: '必須項目が不足しています' }, { status: 400 });
+      return NextResponse.json({ error: 'å¿é é ç®ãä¸è¶³ãã¦ãã¾ã' }, { status: 400 });
     }
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const user = userData.user;
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({ id: user.id, full_name, role: 'student' });
+      .insert({ id: user.id, full_name, email, role: 'student' });
     if (profileError) {
       await supabaseAdmin.auth.admin.deleteUser(user.id);
       return NextResponse.json({ error: profileError.message }, { status: 400 });
