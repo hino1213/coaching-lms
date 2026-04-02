@@ -2,11 +2,12 @@
 
 import React from 'react';
 import Link from 'next/link';
+import type { UserRole } from '@/lib/types/database';
 
 interface User {
   email: string;
   full_name: string;
-  role: 'user' | 'admin' | 'instructor';
+  role: UserRole;
 }
 
 interface HeaderProps {
