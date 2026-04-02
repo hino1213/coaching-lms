@@ -72,5 +72,39 @@ export async function POST(request: Request) {
     );
   }
 
+  // 登録完了メールをResendで送信
+  try {
+    const resendKey = process.env.RESEND_API_KEY;
+    if (resendKey) {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'onboarding@resend.dev',
+          to: [email],
+          subject: 'コーチング学習サイトへのご登録',
+          html: `
+            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+              <h2 style="color:#3b5bdb;">コーチング学習サイトへようこそ！</h2>
+              <p>${full_name} さん、アカウントが登録されました。</p>
+              <p>以下の情報でログインできます。</p>
+              <table style="border-collapse:collapse;width:100%;">
+                <tr><td style="padding:8px;border:1px solid #ddd;background:#f5f5f5;">サイトURL</td><td style="padding:8px;border:1px solid #ddd;"><a href="https://coaching-lms-hazel.vercel.app/login">https://coaching-lms-hazel.vercel.app/login</a></td></tr>
+                <tr><td style="padding:8px;border:1px solid #ddd;background:#f5f5f5;">メールアドレス</td><td style="padding:8px;border:1px solid #ddd;">${email}</td></tr>
+                <tr><td style="padding:8px;border:1px solid #ddd;background:#f5f5f5;">パスワード</td><td style="padding:8px;border:1px solid #ddd;">${password}</td></tr>
+              </table>
+              <p style="margin-top:16px;color:#888;font-size:12px;">ログイン後はパスワードの変更をお勧めします。</p>
+            </div>
+          `,
+        }),
+      });
+    }
+  } catch (_) {
+    // メール送信失敗はアカウント作成の失敗とはしない
+  }
+
   return NextResponse.json({ user: data }, { status: 201 });
 }
