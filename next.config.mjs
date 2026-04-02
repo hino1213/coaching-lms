@@ -6,6 +6,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  serverExternalPackages: ['nodemailer'],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**' },
