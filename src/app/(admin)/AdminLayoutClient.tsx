@@ -7,9 +7,9 @@ import { createClient } from '@/lib/supabase/client';
 import type { Profile } from '@/lib/types/database';
 
 const navItems = [
-  { href: '/admin/dashboard', label: 'ããã·ã¥ãã¼ã', icon: 'ð' },
-  { href: '/admin/courses', label: 'è¬åº§ç®¡ç', icon: 'ð' },
-  { href: '/admin/students', label: 'åè¬çç®¡ç', icon: 'ð¥' },
+  { href: '/admin/dashboard', label: 'ダッシュボード', icon: '📊' },
+  { href: '/admin/courses', label: '講座管理', icon: '📚' },
+  { href: '/admin/students', label: '受講生管理', icon: '👥' },
 ];
 
 export default function AdminLayoutClient({
@@ -24,7 +24,6 @@ export default function AdminLayoutClient({
   const supabase = createClient();
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
 
-  // ãã¼ã¸é·ç§»å®äºæã«ã­ã¼ãã£ã³ã°ç¶æããªã»ãã
   useEffect(() => {
     setNavigatingTo(null);
   }, [pathname]);
@@ -37,13 +36,12 @@ export default function AdminLayoutClient({
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* ããããã¼ */}
       <header className="sticky top-0 z-50 bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-6">
               <Link href="/admin/dashboard" className="font-bold text-lg">
-                ç®¡çèããã«
+                {'\u7d6a\u7406\u8c05\u30d1\u30ee\u30eb'}
               </Link>
               <nav className="hidden sm:flex items-center gap-1">
                 {navItems.map(item => {
@@ -57,9 +55,7 @@ export default function AdminLayoutClient({
                         if (!isActive) setNavigatingTo(item.href);
                       }}
                       className={`px-3 py-1.5 rounded-md text-sm transition flex items-center gap-1.5 ${
-                        isActive
-                          ? 'bg-gray-700 text-white'
-                          : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                        isActive ? 'bg-gray-700 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'
                       }`}
                     >
                       {isNavigating ? (
@@ -79,7 +75,7 @@ export default function AdminLayoutClient({
                 href="/dashboard"
                 className="text-sm text-gray-400 hover:text-white transition"
               >
-                åè¬çç»é¢ã¸
+                {'\u8b30\u6574\u7511\u767d\u308b'}
               </Link>
               <span className="text-sm text-gray-400">
                 {profile.full_name || profile.email}
@@ -88,13 +84,12 @@ export default function AdminLayoutClient({
                 onClick={handleLogout}
                 className="text-sm text-red-400 hover:text-red-300 transition"
               >
-                ã­ã°ã¢ã¦ã
+                {'\u30ee\u30a4\u30a2\u30a6\u30c8'}
               </button>
             </div>
           </div>
         </div>
 
-        {/* ã¢ãã¤ã«ãã */}
         <nav className="sm:hidden border-t border-gray-800 flex">
           {navItems.map(item => {
             const isActive = pathname.startsWith(item.href);
