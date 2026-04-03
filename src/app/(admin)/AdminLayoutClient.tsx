@@ -24,6 +24,7 @@ export default function AdminLayoutClient({
   const supabase = createClient();
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
 
+  // ページ遷移完了時にローディング状態をリセット
   useEffect(() => {
     setNavigatingTo(null);
   }, [pathname]);
@@ -36,12 +37,13 @@ export default function AdminLayoutClient({
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* トップバー */}
       <header className="sticky top-0 z-50 bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-6">
               <Link href="/admin/dashboard" className="font-bold text-lg">
-                {'\u7d6a\u7406\u8c05\u30d1\u30ee\u30eb'}
+                管理者パネル
               </Link>
               <nav className="hidden sm:flex items-center gap-1">
                 {navItems.map(item => {
@@ -55,7 +57,9 @@ export default function AdminLayoutClient({
                         if (!isActive) setNavigatingTo(item.href);
                       }}
                       className={`px-3 py-1.5 rounded-md text-sm transition flex items-center gap-1.5 ${
-                        isActive ? 'bg-gray-700 text-white' : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                        isActive
+                          ? 'bg-gray-700 text-white'
+                          : 'text-gray-300 hover:text-white hover:bg-gray-800'
                       }`}
                     >
                       {isNavigating ? (
@@ -75,7 +79,7 @@ export default function AdminLayoutClient({
                 href="/dashboard"
                 className="text-sm text-gray-400 hover:text-white transition"
               >
-                {'\u8b30\u6574\u7511\u767d\u308b'}
+                受講生画面へ
               </Link>
               <span className="text-sm text-gray-400">
                 {profile.full_name || profile.email}
@@ -84,12 +88,13 @@ export default function AdminLayoutClient({
                 onClick={handleLogout}
                 className="text-sm text-red-400 hover:text-red-300 transition"
               >
-                {'\u30ee\u30a4\u30a2\u30a6\u30c8'}
+                ログアウト
               </button>
             </div>
           </div>
         </div>
 
+        {/* モバイルナビ */}
         <nav className="sm:hidden border-t border-gray-800 flex">
           {navItems.map(item => {
             const isActive = pathname.startsWith(item.href);
