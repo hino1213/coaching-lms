@@ -26,12 +26,14 @@ const CONTENT_TYPE_OPTIONS = [
   { value: 'text', label: '📄 テキストのみ', desc: 'テキスト・Markdownのみ表示' },
   { value: 'video_text', label: '🎬📄 動画＋テキスト', desc: '動画URLとテキスト両方表示' },
   { value: 'work', label: '✏️ ワーク（課題）', desc: '課題テキストのみ表示' },
+  { value: 'quiz', label: '🧠 クイズのみ', desc: '下でクイズを設定してください' },
 ];
 
 // lessonのデータからdisplayTypeを判定
 function resolveDisplayType(lesson: Lesson): string {
   if (lesson.content_type === 'work') return 'work';
   if (lesson.content_type === 'text') return 'text';
+  if (lesson.content_type === 'quiz') return 'quiz';
   // videoタイプだが両方あれば video_text
   if (lesson.video_url && lesson.text_content) return 'video_text';
   return 'video';
@@ -277,6 +279,7 @@ export default function LessonEditor({ lesson, quiz, courseId }: Props) {
   // ============================================================
   const showVideoField = displayType === 'video' || displayType === 'video_text';
   const showTextField = displayType === 'text' || displayType === 'work' || displayType === 'video_text';
+  const isQuizOnly = displayType === 'quiz';
 
   return (
     <div className="space-y-8">
@@ -327,6 +330,13 @@ export default function LessonEditor({ lesson, quiz, courseId }: Props) {
             ))}
           </div>
         </div>
+
+        {/* クイズのみモード */}
+        {isQuizOnly && (
+          <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 text-sm text-indigo-800">
+            🧠 このレッスンはクイズのみです。下の「復習クイズ」セクションでクイズを設定してください。
+          </div>
+        )}
 
         {/* 動画URL */}
         {showVideoField && (
