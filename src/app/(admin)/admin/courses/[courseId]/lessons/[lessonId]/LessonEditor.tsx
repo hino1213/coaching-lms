@@ -434,7 +434,7 @@ export default function LessonEditor({ lesson, quiz, courseId }: Props) {
           </div>
         </div>
 
-        {/* クイズ本$�� */}
+        {/* クイズ本体 */}
         {showQuiz && (
           <div className="border-t border-gray-100 p-6 space-y-6">
 
@@ -561,7 +561,7 @@ export default function LessonEditor({ lesson, quiz, courseId }: Props) {
               onClick={addQuestion}
               className="w-full border-2 border-dashed border-primary-300 text-primary-600 rounded-xl py-3 text-sm font-medium hover:border-primary-400 hover:bg-primary-50 transition"
             >
-              ＋ 問題を追加
+              ＋ 問題を(��加
             </button>
 
             {/* クイズ保存・削除ボタン */}
