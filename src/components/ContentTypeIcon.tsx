@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface ContentTypeIconProps {
-  type: 'video' | 'text' | 'work';
+  type: 'video' | 'text' | 'work' | 'quiz';
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -48,6 +48,18 @@ const ContentTypeIcon: React.FC<ContentTypeIconProps> = ({ type, size = 'md' }) 
       >
         <path d="M3 17.25V21h16.5V17.25m-13.5-5.25l1.41 1.41L12 9.83l10.59 10.59L24 19 12 7 0 19l1.41 1.41z" />
         <path d="M12 2l-5.41 5.41 1.41 1.41L12 4.83l4 4V3l-4-1z" />
+      </svg>
+    );
+  }
+
+  if (type === 'quiz') {
+    return (
+      <svg
+        className={`${sizeClass} text-indigo-500`}
+        fill="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M11.07 12.85c.77-1.39 2.25-2.21 3.11-3.44.91-1.29.4-3.7-2.18-3.7-1.69 0-2.52 1.28-2.87 2.34L7.1 7.05C7.83 4.99 9.78 3 12.01 3c2.23 0 3.76 1.04 4.53 2.36.68 1.17.86 3.26-.25 4.67-.9 1.15-2.02 1.64-2.76 2.75-.29.44-.42.86-.42 1.57h-2.1c-.01-.74.21-1.54.06-1.5zM14 20c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z" />
       </svg>
     );
   }
