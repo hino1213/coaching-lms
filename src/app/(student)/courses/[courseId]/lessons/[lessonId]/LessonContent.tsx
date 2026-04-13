@@ -65,6 +65,7 @@ export default function LessonContent({
     video: '動画レッスン',
     text: 'テキスト教材',
     work: 'ワーク',
+    quiz: 'クイズ',
   };
 
   return (
@@ -104,6 +105,17 @@ export default function LessonContent({
               <MarkdownContent content={lesson.text_content} />
             </div>
           )}
+
+        {/* クイズレッスン */}
+        {lesson.content_type === 'quiz' && (
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center mx-auto mb-4">
+              <span className="text-3xl">🧠</span>
+            </div>
+            <p className="font-bold text-gray-900 mb-1">クイズレッスン</p>
+            <p className="text-sm text-gray-500">下のクイズに挑戦してみましょう！</p>
+          </div>
+        )}
 
         {/* 動画 + 補足テキスト */}
         {lesson.content_type === 'video' && lesson.text_content && (
