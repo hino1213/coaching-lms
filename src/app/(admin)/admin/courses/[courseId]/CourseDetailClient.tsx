@@ -78,7 +78,7 @@ function getContentTypeLabel(lesson: Lesson): string {
 }
 
 // ============================================================
-// ドラッグ可能なレッスン行コンポント
+// ドラッグ可能なレッスン行コンポーネント
 // ============================================================
 function SortableLessonItem({
   lesson,
@@ -100,7 +100,7 @@ function SortableLessonItem({
 
   const style = {
     transform: transform
-      ? `'translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)'
+      ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)`
       : undefined,
     transition,
   };
@@ -146,7 +146,7 @@ function SortableLessonItem({
           href={`/admin/courses/${courseId}/lessons/${lesson.id}`}
           className="text-xs text-primary-600 font-medium bg-primary-50 px-2 py-1 rounded-lg hover:bg-primary-100 transition"
         >
-          コンテンツ�8�m�
+          コンテンツ編集
         </Link>
         <button
           onClick={onDelete}
@@ -163,13 +163,13 @@ function SortableLessonItem({
 }
 
 // ============================================================
-// メォンスンポント
+// メインコンポーネント
 // ============================================================
 export default function CourseDetailClient({ course, sections: initialSections }: Props) {
   const router = useRouter();
   const supabase = createClient();
 
-  // ---- 汎用刷加 ----
+  // ---- 汎用状態 ----
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{
@@ -198,8 +198,7 @@ export default function CourseDetailClient({ course, sections: initialSections }
     id: string; title: string; description: string;
   } | null>(null);
 
-  // ---- レッスン追加
-----
+  // ---- レッスン追加 ----
   const [addingLessonToSection, setAddingLessonToSection] = useState<string | null>(null);
   const [newLesson, setNewLesson] = useState({
     title: '',
@@ -221,7 +220,7 @@ export default function CourseDetailClient({ course, sections: initialSections }
   };
 
   // ============================================================
-  // サバネイルアップロード
+  // サムネイルアップロード
   // ============================================================
   const uploadThumbnail = async (file: File): Promise<string | null> => {
     const fileExt = file.name.split('.').pop();
@@ -261,7 +260,7 @@ export default function CourseDetailClient({ course, sections: initialSections }
       .eq('id', course.id);
     setSaving(false);
     if (error) {
-      showToast('❌ 追存に失敗しました' false);
+      showToast('❌ 保存に失敗しました', false);
     } else {
       setThumbnailFile(null);
       if (thumbnailUrl) setThumbnailPreview(thumbnailUrl);
@@ -292,7 +291,7 @@ export default function CourseDetailClient({ course, sections: initialSections }
       .single();
     setSaving(false);
     if (error) {
-      showToast('❌ セ�t('❌ セクション追加に失敗しました', false);
+      showToast('❌ セクション追加に失敗しました', false);
     } else {
       setSections([...sections, { ...data, lessons: [] }]);
       setNewSection({ title: '', description: '' });
