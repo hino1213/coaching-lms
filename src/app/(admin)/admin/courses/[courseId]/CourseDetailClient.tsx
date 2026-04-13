@@ -4,6 +4,22 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 interface Lesson {
   id: string;
@@ -27,6 +43,7 @@ interface Course {
   id: string;
   title: string;
   description: string | null;
+  thumbnail_url: string | null;
   category: string;
   is_published: boolean;
 }
@@ -41,6 +58,7 @@ const CONTENT_TYPE_OPTIONS = [
   { value: 'text', label: '📄 テキストのみ' },
   { value: 'video_text', label: '🎬📄 動画＋テキスト' },
   { value: 'work', label: '✏️ ワーク（課題）' },
+  { value: 'quiz', label: '🧠 クイズのみ' },
 ];
 
 const CATEGORY_OPTIONS = [
@@ -52,12 +70,103 @@ const CATEGORY_OPTIONS = [
 
 function getContentTypeLabel(lesson: Lesson): string {
   if (lesson.content_type === 'work') return '✏️ ワーク';
+  if (lesson.content_type === 'quiz') return '🧠 クイズ';
   if (lesson.video_url && lesson.text_content) return '🎬📄 動画+テキスト';
   if (lesson.video_url) return '🎬 動画';
   if (lesson.text_content) return '📄 テキスト';
   return lesson.content_type;
 }
 
+// ============================================================
+// ドラッグ可能なレッスン行コンポーネント
+// ============================================================
+function SortableLessonItem({
+  lesson,
+  courseId,
+  onDelete,
+}: {
+  lesson: Lesson;
+  courseId: string;
+  onDelete: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: lesson.id });
+
+  const style = {
+    transform: transform
+      ? `'translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)'
+      : undefined,
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition group ${
+        isDragging ? 'opacity-50 bg-blue-50 z-10 relative' : ''
+      }`}
+    >
+      {/* ドラッグハンドル */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-1 text-gray-300 hover:text-gray-400 mr-2 shrink-0 touch-none"
+        title="ドラッグして为べ晿え"
+      >
+        <svg className="w40h-4" fill="currentColor" viewBox="0 0 20 20">
+          <circle cx="7" cy="4" r="1.5" />
+          <circle cx="13" cy="4" r="1.5" />
+          <circle cx="7" cy="10" r="1.5" />
+          <circle cx="13" cy="10" r="1.5" />
+          <circle cx="7" cy="16" r="1.5" />
+          <circle cx="13" cy="16" r="1.5" />
+        </svg>
+      </button>
+
+      <Link
+        href={`/admin/courses/${courseId}/lessons/${lesson.id}`}
+        className="flex items-center gap-3 min-w-0 flex-1"
+      >
+        <span className="text-sm shrink-0 text-gray-600">{getContentTypeLabel(lesson)}</span>
+        <div className="min-w-0">
+          <p className="font-medium text-gray-900 truncate text-sm">{lesson.title}</p>
+          {lesson.duration_minutes > 0 && (
+            <span className="text-xs text-gray-400">{lesson.duration_minutes}分</span>
+          )}
+        </div>
+      </Link>
+
+      <div className="flex items-center gap-1.5 ml-2 shrink-0">
+        <Link
+          href={`/admin/courses/${courseId}/lessons/${lesson.id}`}
+          className="text-xs text-primary-600 font-medium bg-primary-50 px-2 py-1 rounded-lg hover:bg-primary-100 transition"
+        >
+          コンテンツ編集
+        </Link>
+        <button
+          onClick={onDelete}
+          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
+          title="レッスンを削除"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// メインコンポーネント
+// ============================================================
 export default function CourseDetailClient({ course, sections: initialSections }: Props) {
   const router = useRouter();
   const supabase = createClient();
@@ -78,7 +187,10 @@ export default function CourseDetailClient({ course, sections: initialSections }
     description: course.description || '',
     category: course.category,
     is_published: course.is_published,
+    thumbnail_url: course.thumbnail_url || '',
   });
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>(course.thumbnail_url || '');
 
   // ---- セクション ----
   const [sections, setSections] = useState<Section[]>(initialSections);
@@ -96,9 +208,33 @@ export default function CourseDetailClient({ course, sections: initialSections }
     duration_minutes: 15,
   });
 
+  // ---- D&D ----
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const showToast = (msg: string, ok = true) => {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  // ============================================================
+  // サムネイルアップロード
+  // ============================================================
+  const uploadThumbnail = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${course.id}_${Date.now()}.${fileExt}`;
+    const { data, error } = await supabase.storage
+      .from('course-thumbnails')
+      .upload(fileName, file, { upsert: true });
+    if (error) return null;
+    const { data: { publicUrl } } = supabase.storage
+      .from('course-thumbnails')
+      .getPublicUrl(data.path);
+    return publicUrl;
   };
 
   // ============================================================
@@ -107,6 +243,13 @@ export default function CourseDetailClient({ course, sections: initialSections }
   const saveCourse = async () => {
     if (!courseEdit.title.trim()) return;
     setSaving(true);
+
+    let thumbnailUrl: string | null = courseEdit.thumbnail_url || null;
+    if (thumbnailFile) {
+      const uploaded = await uploadThumbnail(thumbnailFile);
+      if (uploaded) thumbnailUrl = uploaded;
+    }
+
     const { error } = await supabase
       .from('courses')
       .update({
@@ -114,12 +257,15 @@ export default function CourseDetailClient({ course, sections: initialSections }
         description: courseEdit.description.trim() || null,
         category: courseEdit.category,
         is_published: courseEdit.is_published,
+        thumbnail_url: thumbnailUrl,
       })
       .eq('id', course.id);
     setSaving(false);
     if (error) {
       showToast('❌ 保存に失敗しました', false);
     } else {
+      setThumbnailFile(null);
+      if (thumbnailUrl) setThumbnailPreview(thumbnailUrl);
       setIsEditingCourse(false);
       showToast('✅ 講座情報を保存しました');
       router.refresh();
@@ -266,6 +412,44 @@ export default function CourseDetailClient({ course, sections: initialSections }
   };
 
   // ============================================================
+  // レッスンのD&D並べ替え
+  // ============================================================
+  const handleDragEnd = async (sectionId: string, event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    let updatedLessons: Lesson[] = [];
+
+    setSections(prev => {
+      const newSections = prev.map(section => {
+        if (section.id !== sectionId) return section;
+        const oldIndex = section.lessons.findIndex(l => l.id === active.id);
+        const newIndex = section.lessons.findIndex(l => l.id === over.id);
+        const reordered = arrayMove(section.lessons, oldIndex, newIndex).map((l, i) => ({
+          ...l,
+          sort_order: i + 1,
+        }));
+        updatedLessons = reordered;
+        return { ...section, lessons: reordered };
+      });
+      return newSections;
+    });
+
+    // Supabaseへ一括保存
+    if (updatedLessons.length > 0) {
+      try {
+        await Promise.all(
+          updatedLessons.map(l =>
+            supabase.from('lessons').update({ sort_order: l.sort_order }).eq('id', l.id)
+          )
+        );
+      } catch {
+        showToast('❌ 並べ替えの保存に失敗しました', false);
+      }
+    }
+  };
+
+  // ============================================================
   // レンダー
   // ============================================================
   return (
@@ -347,6 +531,47 @@ export default function CourseDetailClient({ course, sections: initialSections }
                   placeholder="講座の説明"
                 />
               </div>
+
+              {/* サムネイル */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">サムネイル画像</label>
+                {thumbnailPreview && (
+                  <div className="mb-2 relative">
+                    <img
+                      src={thumbnailPreview}
+                      alt="サムネイルプレビュー"
+                      className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setThumbnailFile(null);
+                        setThumbnailPreview('');
+                        setCourseEdit({ ...courseEdit, thumbnail_url: '' });
+                      }}
+                      className="absolute top-1.5 right-1.5 bg-white/80 hover:bg-white rounded-full p-1 text-gray-600 hover:text-red-500 transition"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setThumbnailFile(file);
+                      setThumbnailPreview(URL.createObjectURL(file));
+                    }
+                  }}
+                  className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 transition cursor-pointer"
+                />
+                <p className="text-xs text-gray-400 mt-1">JPG・PNG・WebP（推奨サイズ: 1280×720px）</p>
+              </div>
+
               <div className="flex items-center gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">カテゴリ</label>
@@ -372,7 +597,18 @@ export default function CourseDetailClient({ course, sections: initialSections }
               </div>
               <div className="flex gap-2 pt-1">
                 <button
-                  onClick={() => { setIsEditingCourse(false); setCourseEdit({ title: course.title, description: course.description || '', category: course.category, is_published: course.is_published }); }}
+                  onClick={() => {
+                    setIsEditingCourse(false);
+                    setCourseEdit({
+                      title: course.title,
+                      description: course.description || '',
+                      category: course.category,
+                      is_published: course.is_published,
+                      thumbnail_url: course.thumbnail_url || '',
+                    });
+                    setThumbnailFile(null);
+                    setThumbnailPreview(course.thumbnail_url || '');
+                  }}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
                 >
                   キャンセル
@@ -388,7 +624,14 @@ export default function CourseDetailClient({ course, sections: initialSections }
             </div>
           ) : (
             <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="flex-1">
+                {thumbnailPreview && !isEditingCourse && (
+                  <img
+                    src={thumbnailPreview}
+                    alt={course.title}
+                    className="w-full h-32 object-cover rounded-xl mb-3 border border-gray-100"
+                  />
+                )}
                 <p className="text-sm text-gray-500">講座管理</p>
                 <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
                 {course.description && (
@@ -426,12 +669,20 @@ export default function CourseDetailClient({ course, sections: initialSections }
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none"
                   value={editingSection.title}
                   onChange={e => setEditingSection({ ...editingSection, title: e.target.value })}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') saveSection();
+                    if (e.key === 'Escape') setEditingSection(null);
+                  }}
                   placeholder="セクション名"
+                  autoFocus
                 />
                 <input
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none"
                   value={editingSection.description}
                   onChange={e => setEditingSection({ ...editingSection, description: e.target.value })}
+                  onKeyDown={e => {
+                    if (e.key === 'Escape') setEditingSection(null);
+                  }}
                   placeholder="説明（任意）"
                 />
                 <div className="flex gap-2">
@@ -453,7 +704,14 @@ export default function CourseDetailClient({ course, sections: initialSections }
             ) : (
               <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex items-start justify-between gap-2">
                 <div>
-                  <h2 className="font-bold text-gray-800">{section.title}</h2>
+                  {/* セクション名をクリックするとインライン編集 */}
+                  <h2
+                    className="font-bold text-gray-800 cursor-pointer hover:text-primary-600 transition"
+                    title="クリックして編集"
+                    onClick={() => setEditingSection({ id: section.id, title: section.title, description: section.description || '' })}
+                  >
+                    {section.title}
+                  </h2>
                   {section.description && (
                     <p className="text-sm text-gray-500 mt-0.5">{section.description}</p>
                   )}
@@ -481,45 +739,31 @@ export default function CourseDetailClient({ course, sections: initialSections }
               </div>
             )}
 
-            {/* レッスン一覧 */}
+            {/* レッスン一覧（D&D対応） */}
             <div className="divide-y divide-gray-100">
               {section.lessons.length === 0 && addingLessonToSection !== section.id && (
-                <p className="px-5 py-4 text-sm text-gray-400">レッスンがありません</p>
+                <p className="px-5 py-4 text-sm text-gray-400">レッスンがあ㊊ません</p>
               )}
 
-              {section.lessons.map(lesson => (
-                <div key={lesson.id} className="flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition group">
-                  <Link
-                    href={`/admin/courses/${course.id}/lessons/${lesson.id}`}
-                    className="flex items-center gap-3 min-w-0 flex-1"
-                  >
-                    <span className="text-sm shrink-0 text-gray-600">{getContentTypeLabel(lesson)}</span>
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-900 truncate text-sm">{lesson.title}</p>
-                      {lesson.duration_minutes > 0 && (
-                        <span className="text-xs text-gray-400">{lesson.duration_minutes}分</span>
-                      )}
-                    </div>
-                  </Link>
-                  <div className="flex items-center gap-1.5 ml-2 shrink-0">
-                    <Link
-                      href={`/admin/courses/${course.id}/lessons/${lesson.id}`}
-                      className="text-xs text-primary-600 font-medium bg-primary-50 px-2 py-1 rounded-lg hover:bg-primary-100 transition"
-                    >
-                      コンテンツ編集
-                    </Link>
-                    <button
-                      onClick={() => setConfirmDelete({ type: 'lesson', id: lesson.id, name: lesson.title })}
-                      className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition"
-                      title="レッスンを削除"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))}
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={(event) => handleDragEnd(section.id, event)}
+              >
+                <SortableContext
+                  items={section.lessons.map(l => l.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {section.lessons.map(lesson => (
+                    <SortableLessonItem
+                      key={lesson.id}
+                      lesson={lesson}
+                      courseId={course.id}
+                      onDelete={() => setConfirmDelete({ type: 'lesson', id: lesson.id, name: lesson.title })}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
 
               {/* レッスン追加フォーム */}
               {addingLessonToSection === section.id ? (
@@ -557,9 +801,6 @@ export default function CourseDetailClient({ course, sections: initialSections }
                         />
                       </div>
                     </div>
-                    <p className="text-xs text-blue-600 bg-blue-100 rounded-lg px-3 py-2">
-                      💡 クイズは後からレッスン編集画面で追加できます
-                    </p>
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
