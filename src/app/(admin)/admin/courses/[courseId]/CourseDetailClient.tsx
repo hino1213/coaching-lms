@@ -78,7 +78,7 @@ function getContentTypeLabel(lesson: Lesson): string {
 }
 
 // ============================================================
-// ドラッグ可能なレッスン行コンポーネント
+// ドラッグ可能なレッスン行コンポント
 // ============================================================
 function SortableLessonItem({
   lesson,
@@ -100,7 +100,7 @@ function SortableLessonItem({
 
   const style = {
     transform: transform
-      ? `'translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)'
+      ? `translate3d(${Math.round(transform.x)}px, ${Math.round(transform.y)}px, 0)`
       : undefined,
     transition,
   };
@@ -109,18 +109,16 @@ function SortableLessonItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition group ${
-        isDragging ? 'opacity-50 bg-blue-50 z-10 relative' : ''
-      }`}
+      className={`flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 transition group ${isDragging ? 'opacity-50 bg-blue-50 z-10 relative' : ''}`}
     >
       {/* ドラッグハンドル */}
       <button
         {...attributes}
         {...listeners}
         className="cursor-grab active:cursor-grabbing p-1 text-gray-300 hover:text-gray-400 mr-2 shrink-0 touch-none"
-        title="ドラッグして为べ晿え"
+        title="ドラッグして並べ替え"
       >
-        <svg className="w40h-4" fill="currentColor" viewBox="0 0 20 20">
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
           <circle cx="7" cy="4" r="1.5" />
           <circle cx="13" cy="4" r="1.5" />
           <circle cx="7" cy="10" r="1.5" />
@@ -293,7 +291,7 @@ export default function CourseDetailClient({ course, sections: initialSections }
       .single();
     setSaving(false);
     if (error) {
-      showToast('❌ セクション追加に失敗しました', false);
+      showToast('❌ セ� セクション追加に失敗しました', false);
     } else {
       setSections([...sections, { ...data, lessons: [] }]);
       setNewSection({ title: '', description: '' });
@@ -425,7 +423,7 @@ export default function CourseDetailClient({ course, sections: initialSections }
         if (section.id !== sectionId) return section;
         const oldIndex = section.lessons.findIndex(l => l.id === active.id);
         const newIndex = section.lessons.findIndex(l => l.id === over.id);
-        const reordered = arrayMove(section.lessons, oldIndex, newIndex).map((l, i) => ({
+        const reordered = arrayMove(section.lessons, oldIndex, newIndex).map((l: typeof section.lessons[0], i: number) => ({
           ...l,
           sort_order: i + 1,
         }));
@@ -742,13 +740,13 @@ export default function CourseDetailClient({ course, sections: initialSections }
             {/* レッスン一覧（D&D対応） */}
             <div className="divide-y divide-gray-100">
               {section.lessons.length === 0 && addingLessonToSection !== section.id && (
-                <p className="px-5 py-4 text-sm text-gray-400">レッスンがあ㊊ません</p>
+                <p className="px-5 py-4 text-sm text-gray-400">レッスンがありません</p>
               )}
 
               <DndContext
                 sensors={sensors}
                 collisionDetection={closestCenter}
-                onDragEnd={(event) => handleDragEnd(section.id, event)}
+                onDragEnd={(event: DragEndEvent) => handleDragEnd(section.id, event)}
               >
                 <SortableContext
                   items={section.lessons.map(l => l.id)}
