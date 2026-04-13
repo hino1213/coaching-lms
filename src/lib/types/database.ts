@@ -1,5 +1,5 @@
 export type UserRole = 'admin' | 'student';
-export type ContentType = 'video' | 'text' | 'work';
+export type ContentType = 'video' | 'text' | 'work' | 'quiz';
 export type CourseCategory = 'coaching' | 'counseling' | 'mindset' | 'general';
 export type PaymentStatus = 'free' | 'paid' | 'trial';
 
