@@ -2,18 +2,18 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import type { Course } from '@/lib/types/database';
 
-const categoryLabels: Record<string, string> = {
-  coaching: 'コーチング',
-  counseling: 'カウンセリング',
-  mindset: 'マインドセット',
-  general: '一般',
-};
-
 const categoryColors: Record<string, string> = {
   coaching: 'bg-blue-100 text-blue-700',
   counseling: 'bg-purple-100 text-purple-700',
   mindset: 'bg-green-100 text-green-700',
   general: 'bg-gray-100 text-gray-700',
+};
+
+const categoryLabels: Record<string, string> = {
+  coaching: 'コーチング',
+  counseling: 'カウンセリング',
+  mindset: 'マインドセット',
+  general: '一般',
 };
 
 export default async function AdminCoursesPage() {
@@ -28,6 +28,15 @@ export default async function AdminCoursesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">講座管理</h1>
+        <Link
+          href="/admin/courses/new"
+          className="btn-primary text-sm px-4 py-2 flex items-center gap-1.5"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          新規講座を作成
+        </Link>
       </div>
 
       {/* 講座一覧 */}
