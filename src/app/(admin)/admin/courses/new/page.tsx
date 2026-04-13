@@ -20,8 +20,17 @@ export default function NewCoursePage() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('coaching');
   const [isPublished, setIsPublished] = useState(false);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setThumbnailFile(file);
+    setThumbnailPreview(URL.createObjectURL(file));
+  };
 
   const handleCreate = async () => {
     if (!title.trim()) {
@@ -40,6 +49,22 @@ export default function NewCoursePage() {
 
     const maxOrder = existing?.[0]?.sort_order ?? 0;
 
+    // サムネイルのアップロード
+    let thumbnailUrl: string | null = null;
+    if (thumbnailFile) {
+      const fileExt = thumbnailFile.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('course-thumbnails')
+        .upload(fileName, thumbnailFile);
+      if (!uploadError && uploadData) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('course-thumbnails')
+          .getPublicUrl(uploadData.path);
+        thumbnailUrl = publicUrl;
+      }
+    }
+
     const { data, error: insertError } = await supabase
       .from('courses')
       .insert({
@@ -48,6 +73,7 @@ export default function NewCoursePage() {
         category,
         is_published: isPublished,
         sort_order: maxOrder + 1,
+        thumbnail_url: thumbnailUrl,
       })
       .select()
       .single();
@@ -121,6 +147,38 @@ export default function NewCoursePage() {
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
+        </div>
+
+        {/* サムネイル */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            サムネイル画像
+          </label>
+          {thumbnailPreview && (
+            <div className="mb-2 relative">
+              <img
+                src={thumbnailPreview}
+                alt="サムネイルプレビュー"
+                className="w-full h-40 object-cover rounded-lg border border-gray-200"
+              />
+              <button
+                type="button"
+                onClick={() => { setThumbnailFile(null); setThumbnailPreview(''); }}
+                className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full p-1 text-gray-600 hover:text-red-500 transition"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleThumbnailChange}
+            className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 transition cursor-pointer"
+          />
+          <p className="text-xs text-gray-400 mt-1">JPG・PNG・WebP（推奨サイズ: 1280×720px）</p>
         </div>
 
         {/* 公開設定 */}
