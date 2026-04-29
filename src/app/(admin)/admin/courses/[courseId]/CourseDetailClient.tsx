@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import {
   DndContext,
@@ -624,11 +625,15 @@ export default function CourseDetailClient({ course, sections: initialSections }
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
                 {thumbnailPreview && !isEditingCourse && (
-                  <img
-                    src={thumbnailPreview}
-                    alt={course.title}
-                    className="w-full h-32 object-cover rounded-xl mb-3 border border-gray-100"
-                  />
+                  <div className="relative w-full h-32 rounded-xl mb-3 border border-gray-100 overflow-hidden">
+                    <Image
+                      src={thumbnailPreview}
+                      alt={course.title}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 600px"
+                      className="object-cover"
+                    />
+                  </div>
                 )}
                 <p className="text-sm text-gray-500">講座管理</p>
                 <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
@@ -875,7 +880,8 @@ export default function CourseDetailClient({ course, sections: initialSections }
         ) : (
           <button
             onClick={() => setIsAddingSection(true)}
-            className="w-full card p-4 border-2 border-dashed border-gray-300 text-gray-500 hover:border-primary-400 hover:text-primary-600 flex items-center justify-center gap-2 text-sm transition rounded-xl"
+            className="w-full card p-4 border-2 border-dashed border-gray-300 text-gray-500 hover:border-primary-400
+hover:text-primary-600 flex items-center justify-center gap-2 text-sm transition rounded-xl"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
