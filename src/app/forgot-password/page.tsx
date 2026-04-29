@@ -13,7 +13,7 @@ function ForgotPasswordContent() {
 
   useEffect(() => {
     if (searchParams.get('error') === 'expired') {
-      setError('ãªã³ã¯ã®æå¹æéãåãã¦ãã¾ããããä¸åº¦ãªã»ããã¡ã¼ã«ãéä¿¡ãã¦ãã ããã')
+      setError('リンクの有効期限が切れています。もう一度リセットメールを送信してください。')
     }
   }, [searchParams])
 
@@ -27,65 +27,82 @@ function ForgotPasswordContent() {
     setLoading(true)
     setError('')
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/auth/callback?next=/reset-password',
+      redirectTo: `${window.location.origin}/reset-password`,
     })
     if (error) {
-      setError('ã¡ã¼ã«ã®éä¿¡ã«å¤±æãã¾ãããã¡ã¼ã«ã¢ãã¬ã¹ãç¢ºèªãã¦ãã ããã')
-      setLoading(false)
+      setError('メール送信に失敗しました。メールアドレスを確認してください。')
     } else {
       setSent(true)
-      setLoading(false)
     }
+    setLoading(false)
+  }
+
+  if (sent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-accent-50 px-4">
+        <div className="w-full max-w-md text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-100 text-green-600 text-2xl mb-4">
+            ✉️
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">メールを送信しました</h1>
+          <p className="text-gray-500 mb-6">
+            パスワードリセット用のリンクを送信しました。メールをご確認ください。
+          </p>
+          <Link href="/login" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
+            ログインページに戻る
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white text-2xl font-bold">C</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-accent-50 px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary-600 text-white text-2xl font-bold mb-4">
+            C
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">ãã¹ã¯ã¼ãã®ãªã»ãã</h1>
-          <p className="text-gray-500 text-sm mt-1">ç»é²æ¸ã¿ã®ã¡ã¼ã«ã¢ãã¬ã¹ãå¥åãã¦ãã ãã</p>
+          <h1 className="text-2xl font-bold text-gray-900">パスワードをリセット</h1>
+          <p className="text-gray-500 mt-2">
+            登録済みのメールアドレスを入力してください
+          </p>
         </div>
 
-        {sent ? (
-          <div className="text-center">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-              <p className="text-green-700 text-sm">ãã¹ã¯ã¼ããªã»ããç¨ã®ã¡ã¼ã«ãéä¿¡ãã¾ããã<br/>ã¡ã¼ã«ã®ãªã³ã¯ãããã¹ã¯ã¼ããåè¨­å®ãã¦ãã ããã</p>
-            </div>
-            <Link href="/login" className="text-sm text-blue-600 hover:underline">ã­ã°ã¤ã³ç»é¢ã«æ»ã</Link>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="card p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                {error}
               </div>
             )}
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ã¡ã¼ã«ã¢ãã¬ã¹</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                メールアドレス
+              </label>
               <input
+                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="example@email.com"
                 required
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200 outline-none transition"
+                placeholder="example@email.com"
               />
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50"
-            >
-              {loading ? 'éä¿¡ä¸­...' : 'ãªã»ããã¡ã¼ã«ãéä¿¡'}
+
+            <button type="submit" disabled={loading} className="btn-primary w-full">
+              {loading ? 'メール送信中...' : 'リセットメールを送信'}
             </button>
-            <div className="text-center">
-              <Link href="/login" className="text-sm text-gray-500 hover:underline">ã­ã°ã¤ã³ç»é¢ã«æ»ã</Link>
-            </div>
           </form>
-        )}
+        </div>
+
+        <p className="text-center text-sm text-gray-500 mt-6">
+          <Link href="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+            ログインページに戻る
+          </Link>
+        </p>
       </div>
     </div>
   )
@@ -93,7 +110,11 @@ function ForgotPasswordContent() {
 
 export default function ForgotPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary-600 border-t-transparent rounded-full" />
+      </div>
+    }>
       <ForgotPasswordContent />
     </Suspense>
   )
