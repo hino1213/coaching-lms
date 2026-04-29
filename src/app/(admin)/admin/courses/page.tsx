@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Course } from '@/lib/types/database';
 
 const categoryColors: Record<string, string> = {
@@ -48,6 +49,17 @@ export default async function AdminCoursesPage() {
             className="card p-5 hover:shadow-md transition-shadow block"
           >
             <div className="flex items-start justify-between gap-4">
+              {course.thumbnail_url && (
+                <div className="w-24 h-16 relative rounded-lg overflow-hidden shrink-0">
+                  <Image
+                    src={course.thumbnail_url}
+                    alt={course.title}
+                    fill
+                    sizes="96px"
+                    className="object-cover"
+                  />
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <span
