@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import ProgressBar from '@/components/ProgressBar';
 
 export default async function DashboardPage() {
@@ -26,64 +27,47 @@ export default async function DashboardPage() {
     `)
     .eq('user_id', user.id);
 
-  // 各講座の進捗を計算
-  const coursesWithProgress = await Promise.all(
-    (enrollments || []).map(async (enrollment: any) => {
-      const course = enrollment.courses;
-      if (!course) return null;
+  // 各講座の進捗を一括取得（N+1クエリ解消）
+  const courseIds = (enrollments || []).map((e: any) => e.courses?.id).filter(Boolean);
 
-      // 講座内の全レッスン数を取得
-      const { data: sections } = await supabase
-        .from('course_sections')
-        .select('id')
-        .eq('course_id', course.id);
+  let allSections: any[] = [];
+  let allLessons: any[] = [];
+  let allProgress: any[] = [];
 
-      const sectionIds = (sections || []).map((s: any) => s.id);
+  if (courseIds.length > 0) {
+    const [sectionsRes, progressRes] = await Promise.all([
+      supabase.from('course_sections').select('id, course_id').in('course_id', courseIds),
+      supabase.from('lesson_progress').select('lesson_id, is_completed').eq('user_id', user.id).eq('is_completed', true),
+    ]);
+    allSections = sectionsRes.data || [];
+    allProgress = progressRes.data || [];
 
-      let totalLessons = 0;
-      let completedLessons = 0;
+    const sectionIds = allSections.map((s: any) => s.id);
+    if (sectionIds.length > 0) {
+      const lessonsRes = await supabase.from('lessons').select('id, section_id').in('section_id', sectionIds);
+      allLessons = lessonsRes.data || [];
+    }
+  }
 
-      if (sectionIds.length > 0) {
-        const { count: total } = await supabase
-          .from('lessons')
-          .select('*', { count: 'exact', head: true })
-          .in('section_id', sectionIds);
+  const validCourses = (enrollments || []).map((enrollment: any) => {
+    const course = enrollment.courses;
+    if (!course) return null;
 
-        totalLessons = total || 0;
+    const courseSectionIds = allSections.filter((s: any) => s.course_id === course.id).map((s: any) => s.id);
+    const courseLessons = allLessons.filter((l: any) => courseSectionIds.includes(l.section_id));
+    const courseLessonIds = courseLessons.map((l: any) => l.id);
+    const completedLessons = allProgress.filter((p: any) => courseLessonIds.includes(p.lesson_id)).length;
+    const totalLessons = courseLessons.length;
+    const progressPercent = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
-        const { data: lessons } = await supabase
-          .from('lessons')
-          .select('id')
-          .in('section_id', sectionIds);
-
-        if (lessons && lessons.length > 0) {
-          const lessonIds = lessons.map((l: any) => l.id);
-          const { count: completed } = await supabase
-            .from('lesson_progress')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-            .eq('is_completed', true)
-            .in('lesson_id', lessonIds);
-
-          completedLessons = completed || 0;
-        }
-      }
-
-      const progressPercent = totalLessons > 0
-        ? Math.round((completedLessons / totalLessons) * 100)
-        : 0;
-
-      return {
-        ...course,
-        enrolled_at: enrollment.enrolled_at,
-        total_lessons: totalLessons,
-        completed_lessons: completedLessons,
-        progress_percent: progressPercent,
-      };
-    })
-  );
-
-  const validCourses = coursesWithProgress.filter(Boolean);
+    return {
+      ...course,
+      enrolled_at: enrollment.enrolled_at,
+      total_lessons: totalLessons,
+      completed_lessons: completedLessons,
+      progress_percent: progressPercent,
+    };
+  }).filter(Boolean);
 
   // 次に見るべきレッスンを取得（最後に視聴したものの次）
   const { data: recentProgress } = await supabase
@@ -150,12 +134,23 @@ export default async function DashboardPage() {
                 className="card hover:shadow-md transition-shadow group"
               >
                 {/* サムネイル */}
-                <div className="aspect-video bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
-                  <span className="text-4xl opacity-60">
-                    {course.category === 'coaching' ? '🎯' :
-                     course.category === 'mindset' ? '🧠' :
-                     course.category === 'counseling' ? '💬' : '📚'}
-                  </span>
+                <div className="aspect-video bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center relative overflow-hidden">
+                  {course.thumbnail_url ? (
+                    <Image
+                      src={course.thumbnail_url}
+                      alt={course.title}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover"
+                      priority={false}
+                    />
+                  ) : (
+                    <span className="text-4xl opacity-60">
+                      {course.category === 'coaching' ? '🎯' :
+                       course.category === 'mindset' ? '🧠' :
+                       course.category === 'counseling' ? '💬' : '📚'}
+                    </span>
+                  )}
                 </div>
 
                 <div className="p-4">
