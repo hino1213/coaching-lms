@@ -16,19 +16,26 @@ export default function ResetPasswordPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  useEffect(() => {
-    // Check if there's a valid session from the reset link
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        // No session means the link is expired or invalid
-        router.push('/forgot-password?error=expired')
-        return
-      }
-      setReady(true)
-    }
-    checkSession()
-  }, [supabase, router])
+    useEffect(() => {
+          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+                  if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+                            setReady(true)
+                  }
+          })
+
+          supabase.auth.getSession().then(({ data: { session } }) => {
+                  if (session) setReady(true)
+          })
+
+          const timer = setTimeout(() => {
+                  router.push('/forgot-password?error=expired')
+          }, 5000)
+
+          return () => {
+                  subscription.unsubscribe()
+                  clearTimeout(timer)
+          }
+    }, [supabase, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
