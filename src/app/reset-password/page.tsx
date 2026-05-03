@@ -17,24 +17,37 @@ export default function ResetPasswordPage() {
   )
 
     useEffect(() => {
-          const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-                  if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
-                            setReady(true)
-                  }
-          })
+            let timerRef: ReturnType<typeof setTimeout> | null = null
+            let isReady = false
 
-          supabase.auth.getSession().then(({ data: { session } }) => {
-                  if (session) setReady(true)
-          })
+            const markReady = () => {
+                      if (!isReady) {
+                                  isReady = true
+                                  if (timerRef) clearTimeout(timerRef)
+                                  setReady(true)
+                      }
+            }
 
-          const timer = setTimeout(() => {
-                  router.push('/forgot-password?error=expired')
-          }, 5000)
+            const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+                      if (event === 'PASSWORD_RECOVERY' || (event === 'INITIAL_SESSION' && session) || (event === 'SIGNED_IN' && session)) {
+                                  markReady()
+                      }
+            })
 
-          return () => {
-                  subscription.unsubscribe()
-                  clearTimeout(timer)
-          }
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                      if (session) markReady()
+            })
+
+            timerRef = setTimeout(() => {
+                      if (!isReady) {
+                                  router.push('/forgot-password?error=expired')
+                      }
+            }, 5000)
+
+            return () => {
+                      subscription.unsubscribe()
+                      if (timerRef) clearTimeout(timerRef)
+            }
     }, [supabase, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
